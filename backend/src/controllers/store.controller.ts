@@ -36,10 +36,20 @@ export default class StoreController {
       next(error);
     }
   }
-
-  async getStoreById(req: Request, res: Response, next: NextFunction) {
+  async getStoreById(req: Request, res: Response, next: NextFunction){
     try {
       const storeId = req.params.id;
+      const store = await this.storeService.getStoreById(storeId);
+
+      this.responseUtils.sendSuccessResponse(res, store);
+    } catch (error) {
+      
+    }
+  }
+  async getStoreByIdWithProducts(req: Request, res: Response, next: NextFunction) {
+    try {
+      const storeId = req.params.id;
+
       const data:TFindInput = { ...req.queryParams, storeId }; // Merge parsed query params with storeId
 
   

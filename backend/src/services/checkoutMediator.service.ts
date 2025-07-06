@@ -14,6 +14,7 @@ import {
 } from "../types/types";
 import IProductRepository from "../repositories/interfaces/IProductRepository";
 import { Prisma } from "@prisma/client";
+import WebSocketService from "./websocket.service";
 
 @injectable()
 export default class CheckoutMediatorService {
@@ -31,7 +32,9 @@ export default class CheckoutMediatorService {
     @inject("ICustomerService")
     private customerService: ICustomerService,
     @inject("IProductRepository")
-    private productRepository: IProductRepository
+    private productRepository: IProductRepository,
+    @inject("WebSocketService")
+    private webSocketService: WebSocketService
   ) {}
 
   async processCheckout(receivedData: TPlaceOrderData) {
@@ -96,6 +99,34 @@ export default class CheckoutMediatorService {
       // Step 7: Create Order and Order Items
       const order = await this.orderService.createOrder(orderCreateData, orderItems);
       console.log("ProductPriceMap after order creation:", this.productPriceMap);
+
+      // Check if WebSocket service is initialized before sending notification
+      if (this.webSocketService.isInitialized()) {
+        console.log('Preparing order notification for WebSocket');
+        const notificationData = {
+          type: 'newOrder',
+          orderId: order.id,
+          data: {
+            id: order.id,
+            total_amount: order.total_amount.toString(), // Convert Decimal to string
+            status: order.status,
+            created_at: order.created_at.toISOString(), // Convert Date to ISO string
+            customer: {
+              name: createdCustomer.name,
+              phone: createdCustomer.phone
+            },
+            items: orderItems.map(item => ({
+              ...item,
+              unit_price: item.unit_price.toString() // Convert Decimal to string
+            }))
+          }
+        };
+        
+        console.log('Sending order notification:', notificationData);
+        this.webSocketService.notifyNewOrder(orderInfo.store_id, notificationData);
+      } else {
+        console.error('WebSocket service not properly initialized');
+      }
 
       // Prepare the inventory update payload
       const itemsToUpdate = items.map((item) => ({

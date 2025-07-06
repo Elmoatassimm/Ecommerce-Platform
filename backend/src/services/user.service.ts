@@ -93,7 +93,7 @@ export class UserService implements IUserService {
       ) {
         throw error;
       }
-      throw new InternalServerError("Failed to login");
+      throw new InternalServerError("Failed to login"+ error);
     }
   }
 
@@ -158,6 +158,23 @@ export class UserService implements IUserService {
         throw error;
       }
       throw new InternalServerError("Failed to logout");
+    }
+  }
+  async getUser(token: string){
+    try{
+      const user = this.jwt.getUserFromToken(token);
+      return { userId: user.userId, email: user.email, username: user.username, storeId: user.storeId }
+    } catch(error){
+      throw new InternalServerError("Failed to get user");
+    }
+  }
+  
+  async validateToken(token: string){
+    try{
+      const isValid = this.jwt.verifyAccessToken(token);
+      return isValid;
+    } catch(error){
+      throw new InternalServerError("Failed to validate token");
     }
   }
 }

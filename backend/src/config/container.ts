@@ -50,6 +50,10 @@ import IPaymentService from "../services/Interfaces/IPaymentService";
 import { RedisClient } from "./redis";
 import ProductsCacheRepository from "../repositories/product.cache";
 
+
+import WebSocketService from "../services/websocket.service";
+
+
 //________________utils_______________________
 
 container.register("imageUtils", {
@@ -181,4 +185,8 @@ container.register<CheckoutMediatorService>("CheckoutMediatorService", {
   useClass: CheckoutMediatorService,
 });
 
+
+// Create a singleton instance of WebSocketService
+const webSocketService = new WebSocketService();
+container.registerInstance("WebSocketService", webSocketService);
 export { container };

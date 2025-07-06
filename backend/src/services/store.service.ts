@@ -47,6 +47,7 @@ export default class StoreService implements IStoreService {
     }
   }
 
+
   async getStoreByIdWithProducts(data:TFindInput) {
     try {
       return this.storeRepository.getStoreByIdWithProducts(data);
@@ -56,6 +57,16 @@ export default class StoreService implements IStoreService {
       if (error instanceof Prisma.PrismaClientKnownRequestError)
         handlePrismaError(error, { resource: "Store" });
 
+      throw new InternalServerError("Failed to retrieve store");
+    }
+  }
+  async getStoreById(storeId: string){
+    try {
+      const store = await this.storeRepository.getOnlyStore(storeId);
+      if (!store) throw new NotFoundError(`Store with id ${storeId} not found`);
+      return store;
+    } catch (error) {
+      if (error instanceof NotFoundError) throw error;
       throw new InternalServerError("Failed to retrieve store");
     }
   }

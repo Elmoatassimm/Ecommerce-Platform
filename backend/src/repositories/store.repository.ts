@@ -33,8 +33,24 @@ export default class StoreRepository implements IStoreRepository {
       where: { id: storeData.id },
       data: storeData,
     });
+    
   }
+  async getOnlyStore(storeId: string){
+    return this.prisma.store.findUnique(
+      { 
+        where: { id: storeId },
+        include: {
+          owner: {
+            select: {
+              id: true,
+              email: true,
+              username: true,
+            },
+              },
+            },
+          });
 
+  }
   async getStoreByIdWithProducts(data: TFindInput) {
     
     const where: any = { store_id: data.storeId };

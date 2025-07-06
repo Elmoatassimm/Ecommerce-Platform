@@ -11,7 +11,8 @@ import { NotFoundError } from "../../types/errors";
 export default interface IStoreRepository {
   create(storeData: TStoreCreate): Promise<Store>;
   update(storeData: TStoreUpdate): Promise<Store | null>;
-   getStoreByIdWithProducts(data: TFindInput): Promise<{
+  getOnlyStore(storeId: string): Promise<Store | null>
+  getStoreByIdWithProducts(data: TFindInput): Promise<{
     store: Store;
     products: Product[];
     pagination: TPagination;

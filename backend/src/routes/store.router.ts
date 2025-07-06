@@ -22,6 +22,7 @@ import {
   customerUpdateSchema,
 } from "../validations/custemer.validation";
 import parseQueryParams from "../middlewares/parseQueryParams.middlware";
+import { request } from "http";
 
 const storeRouter = Router();
 const storeController = container.resolve(StoreController);
@@ -49,8 +50,14 @@ storeRouter.put(
 );
 
 storeRouter.get("/:id",parseQueryParams, (req: Request, res: Response, next: NextFunction) =>
-  storeController.getStoreById(req, res, next),
+  storeController.getStoreByIdWithProducts(req, res, next),
 );
+
+/*storeRouter.get(
+  "/:id",
+  authMiddleware,
+  (req: Request, res: Response, next: NextFunction) => storeController.getStoreById(req, res, next)
+)*/
 
 // Create Category
 storeRouter.post(
@@ -102,7 +109,7 @@ storeRouter.patch(
 
 // Meta Integration Routes
 storeRouter.post(
-  "/meta-setup/messenger",
+  "/meta-setup",
   authMiddleware,
   validateRequest(metaCreateSchema),
   (req: Request, res: Response, next: NextFunction) =>
@@ -110,7 +117,7 @@ storeRouter.post(
 );
 
 storeRouter.put(
-  "/meta-setup/messenger",
+  "/meta-setup",
   authMiddleware,
   validateRequest(metaUpdateSchema),
   (req: Request, res: Response, next: NextFunction) =>
@@ -118,7 +125,7 @@ storeRouter.put(
 );
 
 storeRouter.delete(
-  "/meta-setup/messenger",
+  "/meta-setup",
   authMiddleware,
   (req: Request, res: Response, next: NextFunction) =>
     metaController.delete(req, res, next),

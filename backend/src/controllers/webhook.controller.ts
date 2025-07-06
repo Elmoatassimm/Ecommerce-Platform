@@ -27,6 +27,7 @@ class WebhookController {
         res.sendStatus(403);
       }
     } else {
+      console.log(mode, token)
       res.sendStatus(400);
     }
   }

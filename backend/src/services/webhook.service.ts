@@ -259,8 +259,9 @@ class WebhookService {
   private async createOrder(senderId: string): Promise<void> {
     try {
       // Fetch products from the ProductService using the store ID.
-      const storeId = "4f537f61-c1d4-40f0-b7cb-fe1d22630d2b";
+      const storeId = "c49c3d38-bafa-414b-a620-27703987aa4e";
       const products = await this.productService.findByStoreId(storeId);
+      console.log(products)
 
       if (!products || products.length === 0) {
         await this.sendTextMessage(senderId, "عذرًا، لا توجد منتجات متاحة لإنشاء الطلب.");

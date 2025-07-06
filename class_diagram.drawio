@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2024-04-18T11:37:00.000Z" agent="Mozilla/5.0" version="21.6.6" type="device">
+  <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="E-commerce Platform - Core Models" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=24;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="200" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- User and Store Section -->
+        <mxCell id="user_store_section" value="User & Store Management" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="400" height="300" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user" value="User&#xa;+ id: String&#xa;+ username: String&#xa;+ email: String&#xa;+ password_hash: String&#xa;+ created_at: DateTime&#xa;+ updated_at: DateTime&#xa;&#xa;+ authenticate(password: String): Boolean&#xa;+ updateProfile(data: Object): void&#xa;+ generateRefreshToken(): String" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="user_store_section">
+          <mxGeometry x="20" y="30" width="180" height="200" as="geometry" />
+        </mxCell>
+
+        <mxCell id="store" value="Store&#xa;+ id: String&#xa;+ name: String&#xa;+ description: String?&#xa;+ owner_id: String&#xa;+ meta_integration_status: Boolean&#xa;+ payment_setup_status: Boolean&#xa;+ created_at: DateTime&#xa;+ updated_at: DateTime&#xa;&#xa;+ addProduct(product: Product): void&#xa;+ updateProduct(productId: String, data: Object): void&#xa;+ deleteProduct(productId: String): void&#xa;+ getProducts(): Product[]&#xa;+ getOrders(): Order[]&#xa;+ getCustomers(): Customer[]" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="user_store_section">
+          <mxGeometry x="220" y="30" width="180" height="250" as="geometry" />
+        </mxCell>
+
+        <!-- Product Management Section -->
+        <mxCell id="product_section" value="Product Management" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="400" width="400" height="250" as="geometry" />
+        </mxCell>
+
+        <mxCell id="product" value="Product&#xa;+ id: String&#xa;+ store_id: String&#xa;+ name: String&#xa;+ description: String?&#xa;+ price: Decimal&#xa;+ category_id: String?&#xa;+ inventory_count: Int&#xa;+ images: Json?&#xa;+ created_at: DateTime&#xa;+ updated_at: DateTime&#xa;&#xa;+ updateInventory(quantity: Int): void&#xa;+ updatePrice(newPrice: Decimal): void&#xa;+ addImages(images: String[]): void&#xa;+ removeImages(imageIds: String[]): void" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="product_section">
+          <mxGeometry x="20" y="30" width="180" height="250" as="geometry" />
+        </mxCell>
+
+        <mxCell id="category" value="Category&#xa;+ id: String&#xa;+ store_id: String&#xa;+ name: String&#xa;+ created_at: DateTime&#xa;+ updated_at: DateTime&#xa;&#xa;+ addProduct(product: Product): void&#xa;+ removeProduct(productId: String): void&#xa;+ getProducts(): Product[]" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="product_section">
+          <mxGeometry x="220" y="30" width="180" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- Order Management Section -->
+        <mxCell id="order_section" value="Order Management" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="680" width="400" height="300" as="geometry" />
+        </mxCell>
+
+        <mxCell id="order" value="Order&#xa;+ id: String&#xa;+ store_id: String&#xa;+ customer_id: String&#xa;+ total_amount: Decimal&#xa;+ status: OrderStatus&#xa;+ payment_method: PaymentMethod&#xa;+ order_source: OrderSource&#xa;+ customer_messenger_id: String?&#xa;+ address: Json?&#xa;+ created_at: DateTime&#xa;+ updated_at: DateTime&#xa;&#xa;+ addItem(product: Product, quantity: Int): void&#xa;+ removeItem(productId: String): void&#xa;+ updateStatus(newStatus: OrderStatus): void&#xa;+ calculateTotal(): Decimal&#xa;+ processPayment(): Payment" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="order_section">
+          <mxGeometry x="20" y="30" width="180" height="250" as="geometry" />
+        </mxCell>
+
+        <mxCell id="order_item" value="OrderItem&#xa;+ order_id: String&#xa;+ product_id: String&#xa;+ quantity: Int&#xa;+ unit_price: Decimal&#xa;+ created_at: DateTime&#xa;+ updated_at: DateTime&#xa;&#xa;+ updateQuantity(quantity: Int): void&#xa;+ calculateSubtotal(): Decimal" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="order_section">
+          <mxGeometry x="220" y="30" width="180" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- Payment Section -->
+        <mxCell id="payment_section" value="Payment Management" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1000" width="400" height="250" as="geometry" />
+        </mxCell>
+
+        <mxCell id="payment" value="Payment&#xa;+ id: String&#xa;+ order_id: String&#xa;+ amount: Decimal&#xa;+ payment_method: PaymentMethod&#xa;+ status: PaymentStatus&#xa;+ gateway_response: Json?&#xa;+ created_at: DateTime&#xa;+ updated_at: DateTime&#xa;&#xa;+ processPayment(): void&#xa;+ verifyPayment(): Boolean&#xa;+ refund(amount: Decimal): void&#xa;+ updateStatus(newStatus: PaymentStatus): void" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="payment_section">
+          <mxGeometry x="20" y="30" width="180" height="250" as="geometry" />
+        </mxCell>
+
+        <mxCell id="chargili" value="ChargiliAccount&#xa;+ id: String&#xa;+ store_id: String&#xa;+ SECRET_KEY: String&#xa;+ created_at: DateTime&#xa;+ updated_at: DateTime&#xa;&#xa;+ processPayment(amount: Decimal): Payment&#xa;+ verifyPayment(paymentId: String): Boolean&#xa;+ refundPayment(paymentId: String, amount: Decimal): void" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="payment_section">
+          <mxGeometry x="220" y="30" width="180" height="250" as="geometry" />
+        </mxCell>
+
+        <!-- Customer Section -->
+        <mxCell id="customer_section" value="Customer Management" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1280" width="400" height="200" as="geometry" />
+        </mxCell>
+
+        <mxCell id="customer" value="Customer&#xa;+ id: String&#xa;+ name: String&#xa;+ email: String?&#xa;+ phone: String?&#xa;+ store_id: String&#xa;+ created_at: DateTime&#xa;+ updated_at: DateTime&#xa;&#xa;+ placeOrder(products: Product[]): Order&#xa;+ updateProfile(data: Object): void&#xa;+ getOrderHistory(): Order[]" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="customer_section">
+          <mxGeometry x="20" y="30" width="180" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- Integration Section -->
+        <mxCell id="integration_section" value="Integration" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1510" width="400" height="200" as="geometry" />
+        </mxCell>
+
+        <mxCell id="meta_integration" value="MetaIntegration&#xa;+ id: String&#xa;+ store_id: String&#xa;+ page_id: String&#xa;+ app_id: String&#xa;+ access_token: String&#xa;+ integration_status: IntegrationMode&#xa;+ created_at: DateTime&#xa;+ updated_at: DateTime&#xa;&#xa;+ syncProducts(): void&#xa;+ syncOrders(): void&#xa;+ updateIntegrationStatus(status: IntegrationMode): void&#xa;+ verifyConnection(): Boolean" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="integration_section">
+          <mxGeometry x="20" y="30" width="180" height="250" as="geometry" />
+        </mxCell>
+
+        <!-- Relationships -->
+        <mxCell id="rel1" value="owns" style="endArrow=open;endFill=0;endSize=12;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="user" target="store">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="240" y="350" as="sourcePoint" />
+            <mxPoint x="400" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="rel2" value="has many" style="endArrow=open;endFill=0;endSize=12;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="store" target="product">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="480" y="350" as="sourcePoint" />
+            <mxPoint x="640" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="rel3" value="has many" style="endArrow=open;endFill=0;endSize=12;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="store" target="order">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="240" y="550" as="sourcePoint" />
+            <mxPoint x="400" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="rel4" value="has many" style="endArrow=open;endFill=0;endSize=12;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="store" target="customer">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="480" y="550" as="sourcePoint" />
+            <mxPoint x="640" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="rel5" value="has many" style="endArrow=open;endFill=0;endSize=12;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="order" target="order_item">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="240" y="750" as="sourcePoint" />
+            <mxPoint x="400" y="750" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="rel6" value="has one" style="endArrow=open;endFill=0;endSize=12;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="order" target="payment">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="480" y="750" as="sourcePoint" />
+            <mxPoint x="640" y="750" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="rel7" value="has one" style="endArrow=open;endFill=0;endSize=12;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="store" target="meta_integration">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="240" y="950" as="sourcePoint" />
+            <mxPoint x="400" y="950" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="rel8" value="has one" style="endArrow=open;endFill=0;endSize=12;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="store" target="chargili">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="480" y="950" as="sourcePoint" />
+            <mxPoint x="640" y="950" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile> 
