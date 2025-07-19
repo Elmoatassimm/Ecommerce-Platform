@@ -1,320 +1,272 @@
-import axios from "axios";
-import { inject, injectable } from "tsyringe";
-import IProductService from "./Interfaces/IProductService";
+import { injectable, inject } from "tsyringe";
+import { PrismaClient } from "@prisma/client";
+import IWebhookService from "./Interfaces/IWebhookService";
+import IMessengerService from "./Interfaces/IMessengerService";
+import IOrderProcessingService from "./Interfaces/IOrderProcessingService";
+import IConversationService from "./Interfaces/IConversationService";
+import db from "../config/db";
+import { ConversationState } from "@prisma/client";
+import { ExtendedConversationState } from "../types/extended-conversation";
 
 @injectable()
-class WebhookService {
+class WebhookService implements IWebhookService {
+  private prisma: PrismaClient;
+
   constructor(
-    @inject("IProductService") private productService: IProductService
-  ) {}
+    @inject("IMessengerService") private messengerService: IMessengerService,
+    @inject("IOrderProcessingService") private orderProcessingService: IOrderProcessingService,
+    @inject("IConversationService") private conversationService: IConversationService,
+    @inject("db") private prismaService: db
+  ) {
+    this.prisma = prismaService.getClient();
+    console.log("[WebhookService] Service initialized");
+  }
 
-  /**
-   * Processes the incoming event and calls the appropriate handler.
-   */
   async processEvent(event: any): Promise<void> {
-    if (event.message) {
-      await this.handleMessage(event);
-    } else if (event.postback) {
-      await this.handlePostback(event);
-    }
-  }
-
-  /**
-   * Handles a received message event.
-   * If the message contains a quick reply payload, forward it to the postback handler.
-   * Otherwise, sends a set of quick reply buttons including options to fetch products,
-   * browse the platform, create an order, create a customer, or view new ideas.
-   * @param event - The incoming message event
-   */
-  private async handleMessage(event: any): Promise<void> {
-    const senderId = event.sender.id;
-
-    if (event.message.quick_reply) {
-      const payload = event.message.quick_reply.payload;
-      console.log(`Quick reply from sender ${senderId}: ${payload}`);
-      await this.handlePostback({ sender: event.sender, postback: { payload } });
-    } else {
-      const messageText = event.message.text;
-      console.log(`Message from sender ${senderId}: ${messageText}`);
-
-      // Send quick replies with additional options for order, customer, and new ideas.
-      await this.sendQuickReplies(senderId, "كيف يمكنني مساعدتك؟", [
-        {
-          content_type: "text",
-          title: "جلب المنتجات 🛍️",
-          payload: "FETCH_PRODUCTS",
-        },
-        {
-          content_type: "text",
-          title: "تصفح المنصة 🌐",
-          payload: "BROWSE_PLATFORM",
-        },
-        {
-          content_type: "text",
-          title: "إنشاء طلب 🛒",
-          payload: "CREATE_ORDER",
-        },
-        {
-          content_type: "text",
-          title: "إنشاء عميل 👤",
-          payload: "CREATE_CUSTOMER",
-        },
-        {
-          content_type: "text",
-          title: "أفكار جديدة 💡",
-          payload: "NEW_IDEAS",
-        },
-      ]);
-    }
-  }
-
-  /**
-   * Handles a postback event by logging it and triggering the appropriate response.
-   * @param event - The incoming postback event
-   */
-  private async handlePostback(event: any): Promise<void> {
-    const senderId = event.sender.id;
-    const payload = event.postback.payload;
-    console.log(`Postback from sender ${senderId}: ${payload}`);
-
-    if (payload === "FETCH_PRODUCTS") {
-      await this.sendProducts(senderId);
-    } else if (payload === "BROWSE_PLATFORM") {
-      await this.sendPlatformLink(senderId);
-    } else if (payload === "CREATE_ORDER") {
-      await this.createOrder(senderId);
-    } else if (payload === "CREATE_CUSTOMER") {
-      await this.createCustomer(senderId);
-    } else if (payload === "NEW_IDEAS") {
-      await this.sendNewIdeas(senderId);
-    }
-  }
-
-  /**
-   * Sends Quick Replies to the user.
-   * @param senderId - The PSID of the recipient
-   * @param message - The text message to send
-   * @param quickReplies - Array of quick reply objects
-   */
-  private async sendQuickReplies(
-    senderId: string,
-    message: string,
-    quickReplies: any[]
-  ): Promise<void> {
+    console.log("[WebhookService] Processing new event:", JSON.stringify(event, null, 2));
     try {
-      const pageAccessToken = process.env.PAGE_ACCESS_TOKEN;
-      if (!pageAccessToken) {
-        throw new Error(
-          "PAGE_ACCESS_TOKEN is not defined in environment variables"
+      if (!event || !event.sender?.id || !event.recipient?.id) {
+        console.error("[WebhookService] Invalid event structure:", event);
+        return;
+      }
+
+      const senderId = event.sender.id;
+      const pageId = event.recipient.id;
+      console.log(`[WebhookService] Processing event for sender: ${senderId}, page: ${pageId}`);
+
+      // Handle echo messages (messages sent by the page)
+      if (event.message?.is_echo) {
+        console.log("[WebhookService] Ignoring echo message");
+        return;
+      }
+
+      // Handle delivery receipts
+      if (event.delivery) {
+        console.log("[WebhookService] Ignoring delivery receipt");
+        return;
+      }
+
+      // Handle read receipts
+      if (event.read) {
+        console.log("[WebhookService] Ignoring read receipt");
+        return;
+      }
+
+      if (event.message) {
+        console.log("[WebhookService] Handling message event");
+        await this.handleMessage(event);
+      } else if (event.postback) {
+        console.log("[WebhookService] Handling postback event");
+        await this.handlePostback(event);
+      } else {
+        console.warn("[WebhookService] Unhandled event type:", event);
+      }
+    } catch (error) {
+      console.error("[WebhookService] Error processing webhook event:", error);
+    }
+  }
+
+  private async handleMessage(event: any): Promise<void> {
+    try {
+      const senderId = event.sender.id;
+      const pageId = event.recipient.id;
+      console.log(`[WebhookService] Handling message from sender: ${senderId}`);
+
+      const storeId = await this.getStoreIdFromPageId(pageId);
+      console.log(`[WebhookService] Retrieved store ID: ${storeId} for page: ${pageId}`);
+      
+      if (!storeId) {
+        console.error(`[WebhookService] No store found for page ID: ${pageId}`);
+        await this.messengerService.sendTextMessage(senderId, "عذرًا، حدث خطأ في النظام. يرجى المحاولة لاحقًا.");
+        return;
+      }
+
+      if (event.message.quick_reply) {
+        const payload = event.message.quick_reply.payload;
+        console.log(`[WebhookService] Quick reply received from ${senderId} with payload: ${payload}`);
+        await this.handlePostback({ sender: event.sender, postback: { payload }, recipient: event.recipient });
+        return;
+      }
+
+      const conversation = await this.conversationService.getConversation(senderId);
+      const messageText = event.message.text;
+      console.log(`[WebhookService] Message from ${senderId}: "${messageText}"`);
+      console.log(`[WebhookService] Current conversation state:`, conversation?.state || 'No conversation');
+
+      if (!conversation) {
+        console.log(`[WebhookService] Creating new conversation for sender: ${senderId}`);
+        await this.conversationService.createOrUpdateConversation(
+          senderId,
+          storeId
+        );
+
+        await this.messengerService.sendQuickReplies(senderId, "كيف يمكنني مساعدتك؟", [
+          {
+            content_type: "text",
+            title: "طلب جديد 🛒",
+            payload: "START_ORDER",
+          },
+          {
+            content_type: "text",
+            title: "تصفح المنصة 🌐",
+            payload: "BROWSE_PLATFORM",
+          },
+        ]);
+        return;
+      }
+
+      console.log(`[WebhookService] Processing message in state: ${conversation.state}`);
+      switch (conversation.state as any) {
+        case ConversationState.AWAITING_QUANTITY:
+          console.log(`[WebhookService] Processing quantity input: ${messageText}`);
+          await this.orderProcessingService.handleQuantityInput(senderId, messageText, conversation);
+          break;
+
+        case ConversationState.AWAITING_ADDRESS:
+          console.log(`[WebhookService] Processing address input: ${messageText}`);
+          await this.orderProcessingService.handleAddressInput(senderId, messageText, conversation);
+          break;
+
+        case ExtendedConversationState.AWAITING_CUSTOMER_NAME:
+          console.log(`[WebhookService] Processing customer name input: ${messageText}`);
+          await this.orderProcessingService.handleCustomerNameInput(senderId, messageText, conversation);
+          break;
+
+        case ExtendedConversationState.AWAITING_CUSTOMER_PHONE:
+          console.log(`[WebhookService] Processing customer phone input: ${messageText}`);
+          await this.orderProcessingService.handleCustomerPhoneInput(senderId, messageText, conversation);
+          break;
+
+        case ExtendedConversationState.AWAITING_CUSTOMER_EMAIL:
+          console.log(`[WebhookService] Processing customer email input: ${messageText}`);
+          await this.orderProcessingService.handleCustomerEmailInput(senderId, messageText, conversation);
+          break;
+
+        default:
+          console.log(`[WebhookService] Sending default quick replies to ${senderId}`);
+          await this.messengerService.sendQuickReplies(senderId, "كيف يمكنني مساعدتك؟", [
+            {
+              content_type: "text",
+              title: "طلب جديد 🛒",
+              payload: "START_ORDER",
+            },
+            {
+              content_type: "text",
+              title: "تصفح المنصة 🌐",
+              payload: "BROWSE_PLATFORM",
+            },
+          ]);
+      }
+    } catch (error) {
+      console.error("[WebhookService] Error handling message:", error);
+      await this.messengerService.sendTextMessage(event.sender.id, "عذرًا، حدث خطأ في النظام. يرجى المحاولة لاحقًا.");
+    }
+  }
+
+  private async handlePostback(event: any): Promise<void> {
+    try {
+      const senderId = event.sender.id;
+      const pageId = event.recipient.id;
+      const payload = event.postback.payload || event.postback?.payload;
+      
+      console.log(`[WebhookService] Processing postback from ${senderId} with payload: ${payload}`);
+      
+      if (!payload) {
+        console.error("[WebhookService] No payload found in postback event");
+        return;
+      }
+
+      const storeId = await this.getStoreIdFromPageId(pageId);
+      console.log(`[WebhookService] Retrieved store ID: ${storeId} for page: ${pageId}`);
+      
+      if (!storeId) {
+        console.error(`[WebhookService] No store found for page ID: ${pageId}`);
+        await this.messengerService.sendTextMessage(senderId, "عذرًا، حدث خطأ في النظام. يرجى المحاولة لاحقًا.");
+        return;
+      }
+
+      if (payload === "START_ORDER" || payload === "FETCH_PRODUCTS") {
+        console.log(`[WebhookService] Starting new order process for ${senderId}`);
+        await this.conversationService.createOrUpdateConversation(
+          senderId,
+          storeId,
+          { state: ConversationState.AWAITING_PRODUCT_SELECTION }
+        );
+        await this.orderProcessingService.sendProductsForOrder(senderId, storeId);
+      } else if (payload === "BROWSE_PLATFORM") {
+        console.log(`[WebhookService] Sending platform link to ${senderId}`);
+        await this.messengerService.sendPlatformLink(senderId);
+      } else if (payload.startsWith("SELECT_PRODUCT_")) {
+        const productId = payload.replace("SELECT_PRODUCT_", "");
+        console.log(`[WebhookService] Processing product selection: ${productId} for ${senderId}`);
+        await this.orderProcessingService.handleProductSelection(senderId, productId, storeId);
+      } else if (payload === "CONFIRM_ORDER") {
+        console.log(`[WebhookService] Processing order confirmation for ${senderId}`);
+        await this.orderProcessingService.handleOrderConfirmation(senderId);
+      } else if (payload === "CANCEL_ORDER") {
+        console.log(`[WebhookService] Processing order cancellation for ${senderId}`);
+        await this.orderProcessingService.handleOrderCancellation(senderId);
+      } else {
+        console.warn(`[WebhookService] Unhandled postback payload: ${payload}`);
+        await this.messengerService.sendTextMessage(
+          senderId,
+          "عذرًا، لم أفهم هذا الطلب. يرجى المحاولة مرة أخرى."
         );
       }
-
-      const url = `https://graph.facebook.com/v22.0/me/messages?access_token=${pageAccessToken}`;
-      const payload = {
-        recipient: { id: senderId },
-        messaging_type: "RESPONSE",
-        message: {
-          text: message,
-          quick_replies: quickReplies,
-        },
-      };
-
-      const response = await axios.post(url, payload, {
-        headers: { "Content-Type": "application/json" },
-      });
-      console.log("Quick Replies sent successfully:", response.data);
-    } catch (error: any) {
-      console.error(
-        "Error sending Quick Replies:",
-        error.response ? error.response.data : error.message
-      );
+    } catch (error) {
+      console.error("[WebhookService] Error handling postback:", error);
+      await this.messengerService.sendTextMessage(event.sender.id, "عذرًا، حدث خطأ في النظام. يرجى المحاولة لاحقًا.");
     }
   }
 
-  /**
-   * Sends a list of products to the user.
-   * @param senderId - The PSID of the recipient
-   */
-  private async sendProducts(senderId: string): Promise<void> {
+  private async getStoreIdFromPageId(pageId: string): Promise<string | null> {
     try {
-      // Fetch products from the ProductService using the store ID.
-      const storeId = "b7864295-5c6f-4d74-ad7b-481ea075d59a";
-      const products = await this.productService.findByStoreId(storeId);
-
-      if (!products || products.length === 0) {
-        console.log("No products found for the given store ID.");
-        await this.sendTextMessage(senderId, "عذرًا، لا توجد منتجات متاحة حاليًا.");
-        return;
-      }
-
-      const productCards = products.map((product: any) => {
-        // Construct a product URL using the product id.
-        const productUrl = `https://your-platform.com/products/${product.id}`;
-        return {
-          title: product.name,
-          subtitle: `${product.price} ريال`,
-          buttons: [
-            {
-              type: "web_url",
-              url: productUrl,
-              title: "عرض المنتج",
-            },
-          ],
-        };
+      console.log(`[WebhookService] Looking up store ID for page: ${pageId}`);
+      const metaIntegration = await this.prisma.metaIntegration.findFirst({
+        where: { page_id: pageId }
       });
 
-      await this.sendGenericTemplate(senderId, productCards);
-    } catch (error: any) {
-      console.error(
-        "Error sending products:",
-        error.response ? error.response.data : error.message
-      );
-    }
-  }
-
-  /**
-   * Sends a generic template (carousel) to the user.
-   * @param senderId - The PSID of the recipient
-   * @param elements - Array of elements to display
-   */
-  private async sendGenericTemplate(senderId: string, elements: any[]): Promise<void> {
-    try {
-      const pageAccessToken = process.env.PAGE_ACCESS_TOKEN;
-      if (!pageAccessToken) {
-        throw new Error("PAGE_ACCESS_TOKEN is not defined in environment variables");
-      }
-      const url = `https://graph.facebook.com/v22.0/me/messages?access_token=${pageAccessToken}`;
-      const payload = {
-        recipient: { id: senderId },
-        messaging_type: "RESPONSE",
-        message: {
-          attachment: {
-            type: "template",
-            payload: {
-              template_type: "generic",
-              elements: elements,
-            },
-          },
-        },
-      };
-      const response = await axios.post(url, payload, {
-        headers: { "Content-Type": "application/json" },
-      });
-      console.log("Generic Template sent successfully:", response.data);
-    } catch (error: any) {
-      console.error(
-        "Error sending Generic Template:",
-        error.response ? error.response.data : error.message
-      );
-    }
-  }
-
-  /**
-   * Sends a link to browse the platform.
-   * @param senderId - The PSID of the recipient
-   */
-  private async sendPlatformLink(senderId: string): Promise<void> {
-    await this.sendTextMessage(
-      senderId,
-      "يمكنك تصفح المنصة من هنا: https://your-platform.com"
-    );
-  }
-
-  /**
-   * Sends a text message to the user.
-   * @param senderId - The PSID of the recipient
-   * @param message - The text message to send
-   */
-  private async sendTextMessage(senderId: string, message: string): Promise<void> {
-    try {
-      const pageAccessToken = process.env.PAGE_ACCESS_TOKEN;
-      if (!pageAccessToken) {
-        throw new Error("PAGE_ACCESS_TOKEN is not defined in environment variables");
-      }
-      const url = `https://graph.facebook.com/v22.0/me/messages?access_token=${pageAccessToken}`;
-      const payload = {
-        recipient: { id: senderId },
-        messaging_type: "RESPONSE",
-        message: { text: message },
-      };
-      const response = await axios.post(url, payload, {
-        headers: { "Content-Type": "application/json" },
-      });
-      console.log("Message sent successfully:", response.data);
-    } catch (error: any) {
-      console.error(
-        "Error sending message:",
-        error.response ? error.response.data : error.message
-      );
-    }
-  }
-
-  // --- New Functionality ---
-
-  /**
-   * Simulates the creation of an order with one item.
-   * Fetches a product from the store and creates an order containing that product.
-   * @param senderId - The PSID of the recipient
-   */
-  private async createOrder(senderId: string): Promise<void> {
-    try {
-      // Fetch products from the ProductService using the store ID.
-      const storeId = "4f537f61-c1d4-40f0-b7cb-fe1d22630d2b";
-      const products = await this.productService.findByStoreId(storeId);
-
-      if (!products || products.length === 0) {
-        await this.sendTextMessage(senderId, "عذرًا، لا توجد منتجات متاحة لإنشاء الطلب.");
-        return;
+      if (!metaIntegration) {
+        console.error(`[WebhookService] No meta integration found for page ID: ${pageId}`);
+        return null;
       }
 
-      // For this example, select the first product as the order item.
-      const product = products[0];
-      const orderId = Math.floor(Math.random() * 1000000);
-
-      const orderMessage = 
-        `تم إنشاء طلبك بنجاح!\n` +
-        `رقم الطلب: ${orderId}\n` +
-        `العنصر: ${product.name}\n` +
-        `السعر: ${product.price} ريال\n` +
-        `الكمية: 1`;
-
-      await this.sendTextMessage(senderId, orderMessage);
-    } catch (error: any) {
-      console.error(
-        "Error creating order:",
-        error.response ? error.response.data : error.message
-      );
+      console.log(`[WebhookService] Found store ID: ${metaIntegration.store_id} for page: ${pageId}`);
+      return metaIntegration.store_id;
+    } catch (error) {
+      console.error(`[WebhookService] Error getting store ID from page ID ${pageId}:`, error);
+      return null;
     }
   }
 
-  /**
-   * Simulates the creation of a customer and sends a confirmation message.
-   * @param senderId - The PSID of the recipient
-   */
-  private async createCustomer(senderId: string): Promise<void> {
-    // For demonstration purposes, generate a random customer ID.
-    const customerId = Math.floor(Math.random() * 1000000);
-    // In a real application, integrate with your customer management service.
-    await this.sendTextMessage(
-      senderId,
-      `تم إنشاء حساب عميل جديد! رقم العميل: ${customerId}`
-    );
-  }
+  async sendOrderStatusUpdate(psid: string, orderId: string, status: string): Promise<void> {
+    try {
+      console.log(`[WebhookService] Sending order status update for order ${orderId} to ${psid}: ${status}`);
+      let statusMessage = "";
 
-  /**
-   * Sends a list of new ideas or suggestions to the user.
-   * @param senderId - The PSID of the recipient
-   */
-  private async sendNewIdeas(senderId: string): Promise<void> {
-    const ideas = [
-      "عرض خاص اليوم",
-      "توصيل مجاني للطلبات الكبيرة",
-      "تجربة المنتجات الجديدة",
-    ];
-    const ideasMessage =
-      "بعض الأفكار الجديدة:\n" +
-      ideas.map((idea, index) => `${index + 1}. ${idea}`).join("\n");
-    await this.sendTextMessage(senderId, ideasMessage);
+      switch (status) {
+        case "processing":
+          statusMessage = "جاري تجهيز طلبك";
+          break;
+        case "shipped":
+          statusMessage = "تم شحن طلبك وهو في الطريق إليك";
+          break;
+        case "delivered":
+          statusMessage = "تم توصيل طلبك بنجاح";
+          break;
+        case "cancelled":
+          statusMessage = "تم إلغاء طلبك";
+          break;
+        default:
+          statusMessage = "تم تحديث حالة طلبك";
+      }
+
+      const message = `تحديث حالة الطلب #${orderId}:\n${statusMessage}`;
+      console.log(`[WebhookService] Sending message: ${message}`);
+      await this.messengerService.sendTextMessage(psid, message);
+    } catch (error) {
+      console.error("[WebhookService] Error sending order status update:", error);
+    }
   }
 }
 

@@ -76,12 +76,13 @@ model Store {
   payment_setup_status    Boolean          @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-  
+
   products     Product[]
   categories   Category[]
   orders       Order[]
   customers    Customer[]
-  
+  conversations Conversation[]
+
   meta_integration MetaIntegration?
   chargili_account ChargiliAccount?
 }
@@ -125,6 +126,8 @@ model Order {
   order_source         OrderSource  @default(platform)
   customer_messenger_id String?
   address              Json?
+  customer_email       String?
+  customer_phone       String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   order_items OrderItem[]
@@ -132,7 +135,7 @@ model Order {
 }
 
 model OrderItem {
-  
+
   order_id   String
   order      Order   @relation(fields: [order_id], references: [id] , onDelete: Cascade)
   product_id String
@@ -159,6 +162,7 @@ model Customer {
 
 model Payment {
   id               String        @id @default(uuid())
+  transaction_id   String        @unique
   order_id         String        @unique
   order            Order         @relation(fields: [order_id], references: [id], onDelete: Restrict)
   amount           Decimal
@@ -175,10 +179,10 @@ model MetaIntegration {
   store              Store          @relation(fields: [store_id], references: [id], onDelete: Cascade)
   page_id            String
   app_id             String
-  access_token       String
-  
+  access_token       String         @db.Text
+
   integration_status IntegrationMode @default(development_mode)
-  
+
   created_at         DateTime       @default(now())
   updated_at         DateTime       @updatedAt
 }
@@ -190,4 +194,31 @@ model ChargiliAccount {
   SECRET_KEY String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+}
+
+enum ConversationState {
+  AWAITING_PRODUCT_SELECTION
+  AWAITING_QUANTITY
+  AWAITING_CONFIRMATION
+  AWAITING_ADDRESS
+  AWAITING_CUSTOMER_NAME
+  AWAITING_CUSTOMER_PHONE
+  AWAITING_CUSTOMER_EMAIL
+  COMPLETED
+}
+
+model Conversation {
+  id                 String            @id @default(uuid())
+  psid               String            @unique
+  store_id           String
+  store              Store             @relation(fields: [store_id], references: [id], onDelete: Cascade)
+  state              ConversationState @default(AWAITING_PRODUCT_SELECTION)
+  temp_product_id    String?
+  temp_quantity      Int?
+  temp_order_id      String?
+  temp_customer_name String?
+  temp_customer_phone String?
+  temp_customer_email String?
+  created_at         DateTime          @default(now())
+  updated_at         DateTime          @updatedAt
 }

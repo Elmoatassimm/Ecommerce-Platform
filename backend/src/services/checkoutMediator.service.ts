@@ -13,7 +13,7 @@ import {
   TPlaceOrderData,
 } from "../types/types";
 import IProductRepository from "../repositories/interfaces/IProductRepository";
-import { Prisma } from "@prisma/client";
+import { Prisma, PaymentMethod } from "@prisma/client";
 
 @injectable()
 export default class CheckoutMediatorService {
@@ -49,7 +49,9 @@ export default class CheckoutMediatorService {
         phone: customerInfo.phone,
         store_id: orderInfo.store_id,
       };
-      const createdCustomer = await this.customerService.createCustomer(customerData);
+      const createdCustomer = await this.customerService.createCustomer(
+        customerData
+      );
 
       // Step 3: Check Inventory and retrieve products
       const products = await this.productService.CheckInventory(items);
@@ -94,8 +96,14 @@ export default class CheckoutMediatorService {
       });
 
       // Step 7: Create Order and Order Items
-      const order = await this.orderService.createOrder(orderCreateData, orderItems);
-      console.log("ProductPriceMap after order creation:", this.productPriceMap);
+      const order = await this.orderService.createOrder(
+        orderCreateData,
+        orderItems
+      );
+      console.log(
+        "ProductPriceMap after order creation:",
+        this.productPriceMap
+      );
 
       // Prepare the inventory update payload
       const itemsToUpdate = items.map((item) => ({
@@ -114,7 +122,10 @@ export default class CheckoutMediatorService {
       }
 
       // Step 8: Get Secret Key for payment processing
-      const secret_key: string | null = await this.chargiliAccountService.getSecretKeyByStoreID(orderInfo.store_id);
+      const secret_key: string | null =
+        await this.chargiliAccountService.getSecretKeyByStoreID(
+          orderInfo.store_id
+        );
       if (!secret_key) {
         throw new BadRequestError("Chargili account not found for the store");
       }
@@ -122,11 +133,16 @@ export default class CheckoutMediatorService {
       // Step 9: Process Payment
       const paymentData: TPaymentCreate = {
         order_id: order.id,
-        amount: order.total_amount,
-        payment_method: order.payment_method,
+        amount: new Prisma.Decimal(order.total_amount),
+        payment_method: order.payment_method as PaymentMethod,
         status: "pending",
       };
-      const payment_link: string = await this.paymentService.createPayment(paymentData, secret_key);
+      
+      const payment_link: string = await this.paymentService.createPayment(
+        paymentData,
+        secret_key,
+        order.store_id
+      );
 
       // Update inventory after successful payment
       await this.productService.updateInventory(itemsToUpdate);

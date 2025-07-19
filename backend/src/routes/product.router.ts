@@ -41,7 +41,7 @@ router.get("/:id", (req, res, next: NextFunction) =>
   productController.getById(req, res, next),
 );
 
-router.get("/stores/:storeId/products", (req, res, next: NextFunction) =>
+router.get("/stores/:storeId", (req, res, next: NextFunction) =>
   productController.getByStoreId(req, res, next),
 );
 

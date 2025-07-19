@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import * as bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -167,7 +168,7 @@ async function main() {
       amount: 629.98,
       payment_method: "cash_on_delivery",
       status: "pending",
-      gateway_response: {},
+      transaction_id: "444444444444444",
     },
   });
 
@@ -194,6 +195,7 @@ async function main() {
 
 main()
   .catch((e) => {
+    console.log("tnakt");
     console.error(e);
     process.exit(1);
   })

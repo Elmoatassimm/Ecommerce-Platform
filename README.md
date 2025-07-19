@@ -4,10 +4,15 @@
 
 ## List of Figures :
 
-1. [Use Case Diagram](#use-case-diagram)
-2. [Activity Diagram](#activity-diagram)
-3. [Component Design (C4 Diagram)](#component-design)
-4. [Entity-Relationship Diagram](#entity-relationship-diagram)
+1. [C4 Model Context Diagram](#c4-model-context-diagram)
+2. [C4 Model Container Diagram](#c4-model-container-diagram)
+3. [Payment Sequence Diagram](#payment-sequence-diagram)
+4. [Place Order Sequence Diagram](#place-order-sequence-diagram)
+5. [Use Case Diagram](#use-case-diagram)
+6. [Activity Diagram](#activity-diagram)
+7. [Component Diagram](#component-diagram)
+8. [Entity-Relationship Diagram](#entity-relationship-diagram)
+9. [Messenger Integration Screenshot](#messenger-integration-screenshot)
 
 ---
 
@@ -21,13 +26,19 @@
 
 
 2. [System Design](#2-system-design)
+   - [Project Structure Visualization](#project-structure-visualization)
+     &nbsp;&nbsp;&nbsp;&nbsp;- [C4 Model Context Diagram](#c4-model-context-diagram)
+     &nbsp;&nbsp;&nbsp;&nbsp;- [C4 Model Container Diagram](#c4-model-container-diagram)
+     &nbsp;&nbsp;&nbsp;&nbsp;- [Payment Sequence Diagram](#payment-sequence-diagram)
+     &nbsp;&nbsp;&nbsp;&nbsp;- [Place Order Sequence Diagram](#place-order-sequence-diagram)
+     &nbsp;&nbsp;&nbsp;&nbsp;- [Messenger Integration Screenshot](#messenger-integration-screenshot)
    - [API Architecture](#system-api-design)
-   - [System Architecture](#system-architecture)  
+   - [System Architecture](#system-architecture)
      &nbsp;&nbsp;&nbsp;&nbsp;- [Component Design (C4 Diagram)](#system-architecture)
-   - [Database Design](#full-database-schema)  
-     &nbsp;&nbsp;&nbsp;&nbsp;- [Entity-Relationship Diagram](#entity-relationship-diagram)  
-     &nbsp;&nbsp;&nbsp;&nbsp;-[Table Schemas](#users-table)  
-     &nbsp;&nbsp;&nbsp;&nbsp;- [Relationships](#relationships)  
+   - [Database Design](#full-database-schema)
+     &nbsp;&nbsp;&nbsp;&nbsp;- [Entity-Relationship Diagram](#entity-relationship-diagram)
+     &nbsp;&nbsp;&nbsp;&nbsp;-[Table Schemas](#users-table)
+     &nbsp;&nbsp;&nbsp;&nbsp;- [Relationships](#relationships)
      &nbsp;&nbsp;&nbsp;&nbsp;- [Constraints](#relationship-constraints-explanation)
 
 ---
@@ -137,13 +148,87 @@
 
 ## Use Case Diagram
 
-![Use Case Diagram](docs/UseCaseDiagram.svg)
+![Use Case Diagram](docs/UseCaseDiagram.png)
 
 ## Activity Diagram
 
 ![Activity Diagram](docs/ActivityDiagram1.svg)
 
 # 2. System Design :
+
+## Project Structure Visualization
+
+This section provides a comprehensive visual overview of the e-commerce platform's architecture and key processes.
+
+### C4 Model Context Diagram
+
+The context diagram shows the high-level view of the system and how it interacts with external actors and systems.
+
+![C4 Model Context Diagram](docs/c4-model%20context%20diagram.png)
+
+**Key Elements:**
+- **Store Owner**: Manages store, products, and orders through the platform
+- **Customer**: Browses products and places orders via website or Messenger
+- **E-commerce Platform System**: The core system providing all functionality
+- **Meta (External System)**: Integrates with Messenger for chat commerce
+- **Chargily Payment (External System)**: Processes payments securely
+
+### C4 Model Container Diagram
+
+The container diagram provides a detailed view of the system's internal structure and technology choices.
+
+![C4 Model Container Diagram](docs/c4%20model%20container%20diagram%20.png)
+
+**Key Components:**
+- **Single Page Application**: React-based frontend for store management and customer shopping
+- **API Application**: Backend services handling business logic and data processing
+- **Database**: MySQL storage for all persistent data
+- **Cache**: Redis for improved performance and session management
+- **External Integrations**: Meta API for Messenger and Chargily for payments
+
+### Payment Sequence Diagram
+
+This diagram illustrates the complete payment processing flow within the system.
+
+![Payment Sequence Diagram](docs/Paymen-sequence-diagram.png)
+
+**Payment Flow:**
+1. Client initializes payment request
+2. Payment service creates session with Chargily system
+3. Customer is redirected to payment gateway
+4. Payment webhook confirms transaction status
+5. Order service updates order status accordingly
+6. Customer receives payment confirmation
+
+### Place Order Sequence Diagram
+
+This diagram shows the detailed process of placing an order through the platform.
+
+![Place Order Sequence Diagram](docs/place-order-sequence-diagram.png)
+
+**Order Placement Flow:**
+1. Customer submits order through the platform
+2. Order controller validates customer and product data
+3. Customer service checks/creates customer record
+4. Product service validates product availability
+5. Order service creates order and updates inventory
+6. Payment processing is initiated if required
+7. Order confirmation is sent to customer
+
+### Messenger Integration Screenshot
+
+The platform integrates with Facebook Messenger to enable chat commerce functionality.
+
+![Messenger Integration](docs/messenger.png)
+
+**Messenger Features:**
+- Direct product browsing through chat interface
+- Order placement via conversational flow
+- Real-time order status updates
+- Customer support integration
+- Seamless transition between web and chat commerce
+
+---
 
 # System API Design
 
@@ -278,8 +363,9 @@ Content-Type: application/json
 ```
 
 # System Architecture
+## Component Diagram
 
-![Component Design](docs/C4Diagram1.svg)
+![Component Diagram](docs/C4Diagram1.svg)
 
 ### Controllers
 

@@ -1,18 +1,18 @@
 import { Prisma, Payment, PrismaClient } from "@prisma/client";
 import  IPaymentRepository  from "./interfaces/IPaymentRepository";
-import { TPaymentCreate, TPaymentUpdate } from "../types/types";
+import { TPaymentCreate, TPaymentCreateWithTransactionId, TPaymentUpdate } from "../types/types";
 import { inject, injectable } from "tsyringe";
 import db from "../config/db";
 
 @injectable()
-export default class ProductRepository implements  IPaymentRepository { 
+export default class PaymentRepository implements  IPaymentRepository { 
           private prisma: PrismaClient;
 
           constructor(@inject("db") private prismaService: db) {
             this.prisma = prismaService.getClient();
           }
 
-  async create(data: TPaymentCreate): Promise<Payment> {
+  async create(data: TPaymentCreateWithTransactionId): Promise<Payment> {
    
     return this.prisma.payment.create({
       data,

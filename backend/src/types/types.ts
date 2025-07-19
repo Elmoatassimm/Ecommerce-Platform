@@ -10,7 +10,8 @@ import {
   Order,
   Payment,
   OrderItem,
-  
+  PaymentMethod,
+  PaymentStatus,
 } from "@prisma/client";
 import { Decimal, JsonValue } from "@prisma/client/runtime/library";
 import { Request } from "express";
@@ -113,14 +114,25 @@ export type TCustomerWithOrders = Customer & {
 };
 
 //_________________ Payment types _______________________
-export type TPaymentCreate = Omit<Payment, "id" | "created_at" | "updated_at" | "gateway_response"> & {
-  gateway_response?: Exclude<Payment["gateway_response"], null>;
+export type TPaymentCreate = {
+  order_id: string;
+  amount: Decimal;
+  payment_method: PaymentMethod;
+  status: PaymentStatus;
+  gateway_response?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
 };
 
-export type TPaymentUpdate =  Partial<TPaymentCreate>;
+export type TPaymentCreateWithTransactionId = TPaymentCreate & {
+  transaction_id: string;
+};
+
+export type TPaymentUpdate = Partial<TPaymentCreate> & { order_id: string };
 
 //_________________ Order types _______________________
-export type TOrderCreate = Omit<Prisma.OrderUncheckedCreateInput, "id" | "created_at" | "updated_at">;
+export type TOrderCreate = Omit<Prisma.OrderUncheckedCreateInput, "id" | "created_at" | "updated_at"> & {
+  customer_email?: string;
+  customer_phone?: string;
+};
 
 export type TOrderUpdate = Partial<Prisma.OrderUncheckedCreateInput>;
 
@@ -140,7 +152,11 @@ export type TOrderWithItems = Order & { order_items: OrderItem[] };
 export type TPlaceOrderData = {
   customer:TCustomerCreate,
   order:TOrderCreate,
-  items:{id:string,quantity:number}[]
+  items:{id:string,quantity:number}[],
+  contact_info?: {
+    email?: string;
+    phone?: string;
+  }
 };
 
 

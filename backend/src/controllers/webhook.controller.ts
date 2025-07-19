@@ -37,6 +37,32 @@ class WebhookController {
   async handleWebhookEvent(req: Request, res: Response): Promise<void> {
     console.log("Received webhook event");
     const body = req.body;
+    
+    // Validate webhook payload structure
+    if (!body || !body.entry || !Array.isArray(body.entry) || body.entry.length === 0) {
+      console.error("Invalid webhook payload structure");
+      res.sendStatus(400);
+      return;
+    }
+
+    const entry = body.entry[0];
+    if (!entry.messaging || !Array.isArray(entry.messaging) || entry.messaging.length === 0) {
+      console.error("Invalid messaging array in webhook payload");
+      res.sendStatus(400);
+      return;
+    }
+
+    const messaging = entry.messaging;
+    const pageId = messaging[0]?.recipient?.id;
+
+    if (!pageId) {
+      console.error("Page ID not found in webhook payload");
+      res.sendStatus(400);
+      return;
+    }
+
+    console.log("messaging", messaging);
+    console.log("pageId", pageId);
 
     if (body.object === "page") {
       // Process each entry in the webhook payload

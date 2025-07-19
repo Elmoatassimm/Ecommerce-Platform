@@ -19,9 +19,8 @@ export default class ProductsCacheRepository {
    */
   async getProductsByStoreId(store_id: string): Promise<Product[]> {
     const cacheKey = `store:${store_id}:products`;
-    console.log("cacheKey",cacheKey)
+   
     const cachedData = await this.redisClient.get(cacheKey);
-    console.log("cachedData",cachedData)
     if (cachedData) {
       console.log(`Returning cached products for store ${store_id}`);
       return JSON.parse(cachedData) as Product[];

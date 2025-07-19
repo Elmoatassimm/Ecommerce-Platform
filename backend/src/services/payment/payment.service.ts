@@ -9,31 +9,37 @@ import {
 } from "../../types/errors";
 import { PaymentStatus, Prisma } from "@prisma/client";
 import handlePrismaError from "../../utils/handlePrismaErrors";
-import IChargiliAccountRepository from "../../repositories/interfaces/IChargiliAccountRepository";
-import { string } from "zod";
 import IPaymentService from "../Interfaces/IPaymentService";
 
 @injectable()
-export class PaymentService implements IPaymentService  {
+export class PaymentService implements IPaymentService {
   constructor(
     @inject("IPaymentRepository") private paymentRepository: IPaymentRepository,
     @inject("PaymentProcessorFactory")
     private paymentProcessorFactory: PaymentProcessorFactory
   ) {}
 
-  async createPayment(data: TPaymentCreate, secret_key: string) {
+  async createPayment(
+    data: TPaymentCreate,
+    secret_key: string,
+    store_id: string
+  ) {
     try {
+
+      console.log("data", data);
       // Get the appropriate payment processor
       const processor = this.paymentProcessorFactory.getProcessor(
         data.payment_method
       );
+      console.log("processor", processor);
 
       // Process the payment
       const processorResponse = await processor.processPayment(
         data.amount,
-        secret_key
+        secret_key,
+        { order_id: data.order_id, store_id: store_id }
       );
-
+console.log("processorResponse", processorResponse);
       // Create payment record with processor response
 
       const paymentData = {
@@ -42,8 +48,9 @@ export class PaymentService implements IPaymentService  {
           ? PaymentStatus.pending
           : PaymentStatus.failed,
         gateway_response: processorResponse.gateway_response,
+        transaction_id: processorResponse.gateway_response.id,
       };
-console.log("paymentData",paymentData)
+      console.log("paymentData", paymentData);
       const payment = await this.paymentRepository.create(paymentData);
       const checkout_url: string =
         processorResponse.gateway_response.checkout_url;
@@ -65,4 +72,6 @@ console.log("paymentData",paymentData)
       throw new InternalServerError("Failed to update payment status");
     }
   }
+
+  
 }

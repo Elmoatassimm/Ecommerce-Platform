@@ -49,7 +49,13 @@ import OrderRepository from "../repositories/order.repository";
 import IPaymentService from "../services/Interfaces/IPaymentService";
 import { RedisClient } from "./redis";
 import ProductsCacheRepository from "../repositories/product.cache";
-
+import IConversationRepository from "../repositories/interfaces/IConversationRepository";
+import ConversationRepository from "../repositories/conversation.repository";
+import IConversationService from "../services/Interfaces/IConversationService";
+import ConversationService from "../services/conversation.service";
+import WebhookService from "../services/webhook.service";
+import MessengerService from "../services/messenger.service";
+import OrderProcessingService from "../services/order-processing.service";
 //________________utils_______________________
 
 container.register("imageUtils", {
@@ -135,6 +141,10 @@ container.register<IMetaRepository>("IMetaRepository", {
 container.register<IMetaService>("IMetaService", {
   useClass: MetaService,
 });
+
+container.register("webhookService", {
+  useClass: WebhookService,
+});
 //____________ Customer module ______________
 container.register<ICustomerRepository>("ICustomerRepository", {
   useClass: CustomerRepository,
@@ -179,6 +189,35 @@ container.register<IOrderService>("IOrderService", {
 // Register the CheckoutMediatorService
 container.register<CheckoutMediatorService>("CheckoutMediatorService", {
   useClass: CheckoutMediatorService,
+});
+
+//____________ Conversation module _________________
+
+// Register conversation repository
+container.register<IConversationRepository>("IConversationRepository", {
+  useClass: ConversationRepository,
+});
+
+// Register conversation service
+container.register<IConversationService>("IConversationService", {
+  useClass: ConversationService,
+});
+
+// Register services
+container.register("IWebhookService", {
+  useClass: WebhookService
+});
+
+container.register("IMessengerService", {
+  useClass: MessengerService
+});
+
+container.register("IOrderProcessingService", {
+  useClass: OrderProcessingService
+});
+
+container.register("IConversationService", {
+  useClass: ConversationService
 });
 
 export { container };

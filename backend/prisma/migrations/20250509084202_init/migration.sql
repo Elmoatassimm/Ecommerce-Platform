@@ -74,7 +74,7 @@ CREATE TABLE `Order` (
     `customer_id` VARCHAR(191) NOT NULL,
     `total_amount` DECIMAL(65, 30) NOT NULL,
     `status` ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
-    `payment_method` ENUM('baridi_mob', 'cash_on_delivery') NOT NULL,
+    `payment_method` ENUM('baridi_mob', 'cash_on_delivery') NOT NULL DEFAULT 'cash_on_delivery',
     `order_source` ENUM('messenger', 'platform', 'in_store') NOT NULL DEFAULT 'platform',
     `customer_messenger_id` VARCHAR(191) NULL,
     `address` JSON NULL,
@@ -114,6 +114,7 @@ CREATE TABLE `Customer` (
 -- CreateTable
 CREATE TABLE `Payment` (
     `id` VARCHAR(191) NOT NULL,
+    `transaction_id` VARCHAR(191) NOT NULL,
     `order_id` VARCHAR(191) NOT NULL,
     `amount` DECIMAL(65, 30) NOT NULL,
     `payment_method` ENUM('baridi_mob', 'cash_on_delivery') NOT NULL,
@@ -122,6 +123,7 @@ CREATE TABLE `Payment` (
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
+    UNIQUE INDEX `Payment_transaction_id_key`(`transaction_id`),
     UNIQUE INDEX `Payment_order_id_key`(`order_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -132,7 +134,7 @@ CREATE TABLE `MetaIntegration` (
     `store_id` VARCHAR(191) NOT NULL,
     `page_id` VARCHAR(191) NOT NULL,
     `app_id` VARCHAR(191) NOT NULL,
-    `access_token` VARCHAR(191) NOT NULL,
+    `access_token` TEXT NOT NULL,
     `integration_status` ENUM('live_mode', 'development_mode') NOT NULL DEFAULT 'development_mode',
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
@@ -150,6 +152,22 @@ CREATE TABLE `ChargiliAccount` (
     `updated_at` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `ChargiliAccount_store_id_key`(`store_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Conversation` (
+    `id` VARCHAR(191) NOT NULL,
+    `psid` VARCHAR(191) NOT NULL,
+    `store_id` VARCHAR(191) NOT NULL,
+    `state` ENUM('AWAITING_PRODUCT_SELECTION', 'AWAITING_QUANTITY', 'AWAITING_CONFIRMATION', 'AWAITING_ADDRESS', 'COMPLETED') NOT NULL DEFAULT 'AWAITING_PRODUCT_SELECTION',
+    `temp_product_id` VARCHAR(191) NULL,
+    `temp_quantity` INTEGER NULL,
+    `temp_order_id` VARCHAR(191) NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `Conversation_psid_key`(`psid`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -191,3 +209,6 @@ ALTER TABLE `MetaIntegration` ADD CONSTRAINT `MetaIntegration_store_id_fkey` FOR
 
 -- AddForeignKey
 ALTER TABLE `ChargiliAccount` ADD CONSTRAINT `ChargiliAccount_store_id_fkey` FOREIGN KEY (`store_id`) REFERENCES `Store`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Conversation` ADD CONSTRAINT `Conversation_store_id_fkey` FOREIGN KEY (`store_id`) REFERENCES `Store`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

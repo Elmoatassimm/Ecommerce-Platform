@@ -5,7 +5,7 @@ import { Decimal } from "@prisma/client/runtime/library";
 
 @injectable()
 export default class ChargiliPay implements IPaymentStrategy {
-  async processPayment(amount: Decimal, secret_key: string) {
+  async processPayment(amount: Decimal, secret_key: string, metaData: { store_id: string; order_id: string }) {
     try {
       const options = {
         method: "POST",
@@ -17,6 +17,8 @@ export default class ChargiliPay implements IPaymentStrategy {
           amount: amount.toNumber(),
           currency: "dzd",
           success_url: "https://google.com",
+          metadata: { store_id: metaData.store_id, order_id: metaData.order_id },
+          
         }),
       };
 

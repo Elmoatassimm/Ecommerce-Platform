@@ -16,12 +16,20 @@ export class OrderController {
 
   async createOrder(req: RequestWithUser, res: Response, next: NextFunction) {
     try {
+      const { contact_info, ...orderData } = req.body;
       
-      const orderData: TPlaceOrderData =  req.body;
-  
-      
-      const order = await this.checkoutMed.processCheckout(orderData);
-       this.responseUtils.sendSuccessResponse(res, order, 201);
+      // Add contact info to order if provided
+      const orderWithContact = {
+        ...orderData,
+        order: {
+          ...orderData.order,
+          customer_email: contact_info?.email,
+          customer_phone: contact_info?.phone
+        }
+      };
+
+      const order = await this.checkoutMed.processCheckout(orderWithContact);
+      this.responseUtils.sendSuccessResponse(res, order, 201);
     } catch (error) {
       next(error);
     }

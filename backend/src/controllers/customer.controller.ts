@@ -9,7 +9,7 @@ export class CustomerController {
   constructor(
     @inject("ICustomerService") private customerService: ICustomerService,
     @inject("responseUtils") private responseUtils: ResponseUtils
-  ) {}
+  ) {} 
 
   async createCustomer(req: RequestWithUser, res: Response, next: NextFunction) {
     try {
